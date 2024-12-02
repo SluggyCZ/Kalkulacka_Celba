@@ -1,20 +1,14 @@
 document.addEventListener('DOMContentLoaded', function() {
     const display = document.getElementById('display');
     const buttons = document.querySelectorAll('.btn');
-    const counterTableBody = document.querySelector('#counterTable tbody');
     let currentInput = '';
     let operator = '';
     let firstOperand = null;
-    const buttonPressCounts = {};
 
     buttons.forEach(button => {
         const value = button.getAttribute('data-value');
-        buttonPressCounts[value] = 0;
 
         button.addEventListener('click', function() {
-            buttonPressCounts[value]++;
-            updateCounterTable();
-
             if (value === 'C') {
                 currentInput = '';
                 operator = '';
@@ -118,18 +112,4 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
-
-    function updateCounterTable() {
-        counterTableBody.innerHTML = '';
-        for (const [key, count] of Object.entries(buttonPressCounts)) {
-            const row = document.createElement('tr');
-            const keyCell = document.createElement('td');
-            keyCell.textContent = key;
-            const countCell = document.createElement('td');
-            countCell.textContent = count;
-            row.appendChild(keyCell);
-            row.appendChild(countCell);
-            counterTableBody.appendChild(row);
-        }
-    }
 });
