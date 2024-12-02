@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     const display = document.getElementById('display');
     const buttons = document.querySelectorAll('.btn');
+    const tableBody = document.querySelector('#counterTable tbody');
     let currentInput = '';
     let operator = '';
     let firstOperand = null;
@@ -110,6 +111,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentInput += value;
                 display.textContent = currentInput;
             }
+            
         });
     });
 });
