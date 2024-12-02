@@ -20,6 +20,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 operator = '';
                 firstOperand = null;
                 display.textContent = '0';
+            } else if (value === 'CE') {
+                currentInput = '';
+                display.textContent = '0';
             } else if (value === '=') {
                 if (firstOperand !== null && operator !== '' && currentInput !== '') {
                     const secondOperand = parseFloat(currentInput);
@@ -63,12 +66,48 @@ document.addEventListener('DOMContentLoaded', function() {
                                 break;
                         }
                         display.textContent = result;
-                        firstOperand = result;
+                        currentInput = result.toString();
+                        firstOperand = null;
+                        operator = '';
                     } else {
                         firstOperand = parseFloat(currentInput);
+                        operator = value;
+                        currentInput = '';
                     }
-                    operator = value;
-                    currentInput = '';
+                }
+            } else if (value === '%') {
+                if (currentInput !== '') {
+                    const result = parseFloat(currentInput) / 100;
+                    display.textContent = result;
+                    currentInput = result.toString();
+                }
+            } else if (value === 'x²') {
+                if (currentInput !== '') {
+                    const result = Math.pow(parseFloat(currentInput), 2);
+                    display.textContent = result;
+                    currentInput = result.toString();
+                }
+            } else if (value === '√x') {
+                if (currentInput !== '') {
+                    const result = Math.sqrt(parseFloat(currentInput));
+                    display.textContent = result;
+                    currentInput = result.toString();
+                }
+            } else if (value === '¹/x') {
+                if (currentInput !== '') {
+                    const result = 1 / parseFloat(currentInput);
+                    display.textContent = result;
+                    currentInput = result.toString();
+                }
+            } else if (value === '⌫') {
+                if (currentInput !== '') {
+                    currentInput = currentInput.slice(0, -1);
+                    display.textContent = currentInput || '0';
+                }
+            } else if (value === '+/-') {
+                if (currentInput !== '') {
+                    currentInput = (parseFloat(currentInput) * -1).toString();
+                    display.textContent = currentInput;
                 }
             } else {
                 if (value === '.' && currentInput.includes('.')) {
@@ -84,11 +123,11 @@ document.addEventListener('DOMContentLoaded', function() {
         counterTableBody.innerHTML = '';
         for (const [key, count] of Object.entries(buttonPressCounts)) {
             const row = document.createElement('tr');
-            const buttonCell = document.createElement('td');
+            const keyCell = document.createElement('td');
+            keyCell.textContent = key;
             const countCell = document.createElement('td');
-            buttonCell.textContent = key;
             countCell.textContent = count;
-            row.appendChild(buttonCell);
+            row.appendChild(keyCell);
             row.appendChild(countCell);
             counterTableBody.appendChild(row);
         }
