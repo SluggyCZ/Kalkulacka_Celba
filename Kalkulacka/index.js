@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const display = document.getElementById('display');
     const buttons = document.querySelectorAll('.btn');
     const tableBody = document.querySelector('#counterTable tbody');
@@ -6,10 +6,29 @@ document.addEventListener('DOMContentLoaded', function() {
     let operator = '';
     let firstOperand = null;
 
+    // Funkce pro aktualizaci tabulky statistik
+    const updateStatsTable = () => {
+        fetch('/api/stats')
+            .then(response => response.json())
+            .then(data => {
+                tableBody.innerHTML = ''; // Vyčistit tabulku
+                for (const [key, value] of Object.entries(data)) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td>${key}</td><td>${value}</td>`;
+                    tableBody.appendChild(row);
+                }
+            })
+            .catch(err => console.error('Chyba při načítání statistik:', err));
+    };
+
+    // Inicializace statistik při načtení stránky
+    updateStatsTable();
+
     buttons.forEach(button => {
         const value = button.getAttribute('data-value');
 
-        button.addEventListener('click', function() {
+        button.addEventListener('click', function () {
+            // Logika kalkulačky
             if (value === 'C') {
                 currentInput = '';
                 operator = '';
@@ -43,75 +62,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } else if (['+', '-', '*', '/'].includes(value)) {
                 if (currentInput !== '') {
-                    if (firstOperand !== null && operator !== '') {
-                        const secondOperand = parseFloat(currentInput);
-                        let result;
-                        switch (operator) {
-                            case '+':
-                                result = firstOperand + secondOperand;
-                                break;
-                            case '-':
-                                result = firstOperand - secondOperand;
-                                break;
-                            case '*':
-                                result = firstOperand * secondOperand;
-                                break;
-                            case '/':
-                                result = firstOperand / secondOperand;
-                                break;
-                        }
-                        display.textContent = result;
-                        currentInput = result.toString();
-                        firstOperand = null;
-                        operator = '';
-                    } else {
-                        firstOperand = parseFloat(currentInput);
-                        operator = value;
-                        currentInput = '';
-                    }
-                }
-            } else if (value === '%') {
-                if (currentInput !== '') {
-                    const result = parseFloat(currentInput) / 100;
-                    display.textContent = result;
-                    currentInput = result.toString();
-                }
-            } else if (value === 'x²') {
-                if (currentInput !== '') {
-                    const result = Math.pow(parseFloat(currentInput), 2);
-                    display.textContent = result;
-                    currentInput = result.toString();
-                }
-            } else if (value === '√x') {
-                if (currentInput !== '') {
-                    const result = Math.sqrt(parseFloat(currentInput));
-                    display.textContent = result;
-                    currentInput = result.toString();
-                }
-            } else if (value === '¹/x') {
-                if (currentInput !== '') {
-                    const result = 1 / parseFloat(currentInput);
-                    display.textContent = result;
-                    currentInput = result.toString();
-                }
-            } else if (value === '⌫') {
-                if (currentInput !== '') {
-                    currentInput = currentInput.slice(0, -1);
-                    display.textContent = currentInput || '0';
-                }
-            } else if (value === '+/-') {
-                if (currentInput !== '') {
-                    currentInput = (parseFloat(currentInput) * -1).toString();
-                    display.textContent = currentInput;
+                    firstOperand = parseFloat(currentInput);
+                    operator = value;
+                    currentInput = '';
                 }
             } else {
-                if (value === '.' && currentInput.includes('.')) {
-                    return; // Prevent adding another decimal dot
-                }
                 currentInput += value;
                 display.textContent = currentInput;
             }
-            
+
+            // Odeslání stisknutí tlačítka na server
+            fetch('/api/button-press', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ buttonValue: value }),
+            })
+                .then(() => updateStatsTable())
+                .catch(err => console.error('Chyba při odesílání tlačítka:', err));
         });
     });
 });
