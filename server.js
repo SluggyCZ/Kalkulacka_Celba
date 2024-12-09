@@ -5,45 +5,43 @@ const fs = require('fs');
 const app = express();
 const PORT = 3000;
 
-// Nastavení statické složky na `Kalkulacka`
-app.use(express.static(path.join(__dirname, 'Kalkulacka')));
-app.use(express.json());
-
-// Cesta k souboru `data.json`
 const dataFilePath = path.join(__dirname, 'data.json');
 
-// Načtení existujících dat nebo vytvoření prázdného objektu
-let buttonPressCounts = {};
-if (fs.existsSync(dataFilePath)) {
-    buttonPressCounts = JSON.parse(fs.readFileSync(dataFilePath, 'utf-8'));
-}
-
-// Uložení dat do souboru
-const saveDataToFile = () => {
-    fs.writeFileSync(dataFilePath, JSON.stringify(buttonPressCounts, null, 2), 'utf-8');
-};
-
-// Endpoint pro zaznamenání stisknutí tlačítka
-app.post('/api/button-press', (req, res) => {
-    const { buttonValue } = req.body;
-
-    // Zvýšení počtu stisknutí pro tlačítko
-    buttonPressCounts[buttonValue] = (buttonPressCounts[buttonValue] || 0) + 1;
-
-    // Uložení dat do souboru
-    saveDataToFile();
-
-    res.status(200).send({ message: `Tlačítko "${buttonValue}" bylo zaznamenáno.`, data: buttonPressCounts });
+app.get('/api/button-clicks', (req, res) => {
+    let data = {};
+    if (fs.existsSync(dataFilePath)) {
+        data = JSON.parse(fs.readFileSync(dataFilePath, 'utf-8'));
+    }
+    res.json(data);
 });
 
-// Endpoint pro získání statistik
-app.get('/api/stats', (req, res) => {
-    res.status(200).send(buttonPressCounts);
-});
+// Middleware pro parsování JSON dat
+app.use(express.json());
 
-// Hlavní stránka
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'Kalkulacka', 'index.html'));
+// Statická složka
+app.use(express.static(path.join(__dirname, 'Kalkulacka')));
+
+// Endpoint pro zpracování tlačítek
+app.post('/api/button-click', (req, res) => {
+    const button = req.body.button;
+
+    // Načtení dat ze souboru
+    let data = {};
+    if (fs.existsSync(dataFilePath)) {
+        data = JSON.parse(fs.readFileSync(dataFilePath, 'utf-8'));
+    }
+
+    // Aktualizace počtu stisknutí tlačítka
+    if (data[button]) {
+        data[button]++;
+    } else {
+        data[button] = 1;
+    }
+
+    // Uložení do souboru
+    fs.writeFileSync(dataFilePath, JSON.stringify(data, null, 2));
+
+    res.json({ message: 'Počet stisknutí tlačítek byl aktualizován', data });
 });
 
 // Spuštění serveru

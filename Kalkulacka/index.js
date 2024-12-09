@@ -6,29 +6,63 @@ document.addEventListener('DOMContentLoaded', function () {
     let operator = '';
     let firstOperand = null;
 
-    // Funkce pro aktualizaci tabulky statistik
-    const updateStatsTable = () => {
-        fetch('/api/stats')
+    // Funkce pro odeslání dat na server
+    function sendButtonClick(value) {
+        fetch('/api/button-click', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ button: value }),
+        })
             .then(response => response.json())
             .then(data => {
-                tableBody.innerHTML = ''; // Vyčistit tabulku
-                for (const [key, value] of Object.entries(data)) {
+                console.log('Úspěšně odesláno:', data);
+                fetchAndUpdateTable(); // Aktualizuj tabulku po odeslání dat
+            })
+            .catch(error => {
+                console.error('Chyba při odesílání dat:', error);
+            });
+    }
+
+    // Funkce pro načtení dat ze serveru a aktualizaci tabulky
+    function fetchAndUpdateTable() {
+        fetch('/api/button-clicks')
+            .then(response => response.json())
+            .then(data => {
+                // Vymazání tabulky
+                tableBody.innerHTML = '';
+
+                // Přidání nových řádků
+                for (const [button, count] of Object.entries(data)) {
                     const row = document.createElement('tr');
-                    row.innerHTML = `<td>${key}</td><td>${value}</td>`;
+                    const buttonCell = document.createElement('td');
+                    const countCell = document.createElement('td');
+
+                    buttonCell.textContent = button;
+                    countCell.textContent = count;
+
+                    row.appendChild(buttonCell);
+                    row.appendChild(countCell);
                     tableBody.appendChild(row);
                 }
             })
-            .catch(err => console.error('Chyba při načítání statistik:', err));
-    };
+            .catch(error => {
+                console.error('Chyba při načítání dat:', error);
+            });
+    }
 
-    // Inicializace statistik při načtení stránky
-    updateStatsTable();
+    // Při načtení stránky načti data a vykresli tabulku
+    fetchAndUpdateTable();
 
+    // Přidání event listeneru pro tlačítka
     buttons.forEach(button => {
         const value = button.getAttribute('data-value');
 
         button.addEventListener('click', function () {
-            // Logika kalkulačky
+            sendButtonClick(value);
+
+            // Původní logika pro kalkulačku
             if (value === 'C') {
                 currentInput = '';
                 operator = '';
@@ -62,23 +96,74 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             } else if (['+', '-', '*', '/'].includes(value)) {
                 if (currentInput !== '') {
-                    firstOperand = parseFloat(currentInput);
-                    operator = value;
-                    currentInput = '';
+                    if (firstOperand !== null && operator !== '') {
+                        const secondOperand = parseFloat(currentInput);
+                        let result;
+                        switch (operator) {
+                            case '+':
+                                result = firstOperand + secondOperand;
+                                break;
+                            case '-':
+                                result = firstOperand - secondOperand;
+                                break;
+                            case '*':
+                                result = firstOperand * secondOperand;
+                                break;
+                            case '/':
+                                result = firstOperand / secondOperand;
+                                break;
+                        }
+                        display.textContent = result;
+                        currentInput = result.toString();
+                        firstOperand = null;
+                        operator = '';
+                    } else {
+                        firstOperand = parseFloat(currentInput);
+                        operator = value;
+                        currentInput = '';
+                    }
+                }
+            } else if (value === '%') {
+                if (currentInput !== '') {
+                    const result = parseFloat(currentInput) / 100;
+                    display.textContent = result;
+                    currentInput = result.toString();
+                }
+            } else if (value === 'x²') {
+                if (currentInput !== '') {
+                    const result = Math.pow(parseFloat(currentInput), 2);
+                    display.textContent = result;
+                    currentInput = result.toString();
+                }
+            } else if (value === '√x') {
+                if (currentInput !== '') {
+                    const result = Math.sqrt(parseFloat(currentInput));
+                    display.textContent = result;
+                    currentInput = result.toString();
+                }
+            } else if (value === '¹/x') {
+                if (currentInput !== '') {
+                    const result = 1 / parseFloat(currentInput);
+                    display.textContent = result;
+                    currentInput = result.toString();
+                }
+            } else if (value === '⌫') {
+                if (currentInput !== '') {
+                    currentInput = currentInput.slice(0, -1);
+                    display.textContent = currentInput || '0';
+                }
+            } else if (value === '+/-') {
+                if (currentInput !== '') {
+                    currentInput = (parseFloat(currentInput) * -1).toString();
+                    display.textContent = currentInput;
                 }
             } else {
+                if (value === '.' && currentInput.includes('.')) {
+                    return; // Prevent adding another decimal dot
+                }
                 currentInput += value;
                 display.textContent = currentInput;
             }
-
-            // Odeslání stisknutí tlačítka na server
-            fetch('/api/button-press', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ buttonValue: value }),
-            })
-                .then(() => updateStatsTable())
-                .catch(err => console.error('Chyba při odesílání tlačítka:', err));
         });
     });
 });
