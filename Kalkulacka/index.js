@@ -124,11 +124,19 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 }
             } else if (value === '%') {
-                if (currentInput !== '') {
+                if (firstOperand !== null && operator !== '' && currentInput !== '') {
+                    const secondOperand = parseFloat(currentInput);
+                    const result = firstOperand * (secondOperand / 100);
+                    display.textContent = result;
+                    currentInput = result.toString();
+                    firstOperand = null;
+                    operator = '';
+                } else if (currentInput !== '') {
                     const result = parseFloat(currentInput) / 100;
                     display.textContent = result;
                     currentInput = result.toString();
                 }
+                
             } else if (value === 'x²') {
                 if (currentInput !== '') {
                     const result = Math.pow(parseFloat(currentInput), 2);
